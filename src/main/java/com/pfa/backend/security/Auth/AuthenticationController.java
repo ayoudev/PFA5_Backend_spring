@@ -2,7 +2,6 @@ package com.pfa.backend.security.Auth;
 
 import com.pfa.backend.security.config.JwtService;
 import com.pfa.backend.security.entity.User;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

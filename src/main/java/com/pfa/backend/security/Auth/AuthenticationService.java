@@ -6,7 +6,6 @@ import com.pfa.backend.security.config.JwtService;
 import com.pfa.backend.security.entity.Role;
 import com.pfa.backend.security.entity.User;
 import com.pfa.backend.security.repository.UserRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
