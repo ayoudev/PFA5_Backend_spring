@@ -1,5 +1,7 @@
 package com.pfa.backend.security.Auth;
 
+import com.pfa.backend.configuration_2fa.EmailService;
+import com.pfa.backend.configuration_2fa.OtpGenerator;
 import com.pfa.backend.security.config.JwtService;
 import com.pfa.backend.security.entity.User;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -7,16 +9,21 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 @RestController
-@CrossOrigin(origins = "http://localhost:4200")
+@CrossOrigin(origins = "http://localhost:4200", allowCredentials = "true")
 @RequestMapping("/api/v1/auth")
 public class AuthenticationController {
 
     private final AuthenticationService service;
     private final JwtService jwtService;
+
+    @Autowired
+    private EmailService emailService;
+    private Map<String, String> otpStore = new HashMap<>();
 
     @Autowired
     private ServiceJwtTokenProvider jwtTokenProvider;
@@ -25,6 +32,40 @@ public class AuthenticationController {
     public AuthenticationController(AuthenticationService service, JwtService jwtService) {
         this.service = service;
         this.jwtService = jwtService;
+    }
+
+    @PostMapping("/send-otp")
+    public String sendOtp(@RequestParam String email) {
+        String otp = OtpGenerator.generateOtp(6);
+        long timestamp = System.currentTimeMillis(); // Temps actuel en millisecondes
+        otpStore.put(email, otp + ":" + timestamp); // Stocker OTP avec un horodatage
+        emailService.sendOtpEmail(email, "Votre OTP", otp);
+        return "OTP envoyé à l'adresse e-mail " + email;
+    }
+
+    @PostMapping("/verify-otp")
+    public String verifyOtp(@RequestParam String email, @RequestParam String otp) {
+        if (otpStore.containsKey(email)) {
+            String[] otpData = otpStore.get(email).split(":");
+            String storedOtp = otpData[0];
+            long timestamp = Long.parseLong(otpData[1]);
+
+            // Vérifier si l'OTP a expiré (30 secondes)
+            if (System.currentTimeMillis() - timestamp > 30 * 1000) {
+                otpStore.remove(email);
+                return "OTP expiré.";
+            }
+
+            // Vérifier si l'OTP est correct
+            if (storedOtp.equals(otp)) {
+                otpStore.remove(email);
+                return "OTP validé avec succès.";
+            } else {
+                return "OTP invalide.";
+            }
+        } else {
+            return "Aucun OTP trouvé pour cet e-mail.";
+        }
     }
 
     @GetMapping("/validate-token")
